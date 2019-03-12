@@ -29,7 +29,7 @@ function install_opencv()
         exec_and_search_errors "$SUDO_PREFIX apt-get $APT_QUIET install -y lsb-release"
     fi
     
-    if [[ `lsb_release -d` =~ .*Raspbian.* ]] 
+    if [[ `lsb_release -d` =~ .*Debian.* ]]
     then 
         echo ""
         echo "************************ Please confirm *******************************"
@@ -44,7 +44,8 @@ function install_opencv()
             echo "";
             exec_and_search_errors "$SUDO_PREFIX apt-get $APT_QUIET update -y"
             exec_and_search_errors "$SUDO_PREFIX apt-get $APT_QUIET install -y build-essential cmake pkg-config"
-            exec_and_search_errors "$SUDO_PREFIX apt-get $APT_QUIET install -y libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev"
+            # exec_and_search_errors "$SUDO_PREFIX apt-get $APT_QUIET install -y libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev"
+            exec_and_search_errors "$SUDO_PREFIX apt-get $APT_QUIET install -y libjpeg-dev libtiff5-dev libpng16-16"
             exec_and_search_errors "$SUDO_PREFIX apt-get $APT_QUIET install -y libavcodec-dev libavformat-dev libswscale-dev libv4l-dev"
             exec_and_search_errors "$SUDO_PREFIX apt-get $APT_QUIET install -y libxvidcore-dev libx264-dev"
             exec_and_search_errors "$SUDO_PREFIX apt-get $APT_QUIET install -y libgtk2.0-dev libgtk-3-dev"

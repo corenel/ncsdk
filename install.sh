@@ -29,6 +29,9 @@ function check_supported_os()
     VERSION="$(lsb_release -r 2>/dev/null | awk '{ print $2 }' | sed 's/[.]//')"
     OS_DISTRO="${DISTRO:-INVALID}"
     OS_VERSION="${VERSION:-255}"
+    # Fake as Raspbian 9.1
+    OS_DISTRO="raspbian"
+    OS_VERSION="91"
     if [ "${OS_DISTRO,,}" = "ubuntu" ] && [ ${OS_VERSION} = 1604 ]; then
        # Require 64-bit Ubuntu OS
         HARDWARE_PLATFORM=$(uname -i)
@@ -152,9 +155,9 @@ function init_installer()
     read_ncsdk_config
 
     ### Set installer verbosity level
-    APT_QUIET=-qq
-    PIP_QUIET=--quiet
-    GIT_QUIET=-q
+    APT_QUIET=
+    PIP_QUIET=
+    GIT_QUIET=
     STDOUT_QUIET='>/dev/null'
     if [ "${VERBOSE}" = "yes" ]; then
         APT_QUIET=
@@ -367,11 +370,11 @@ function install_python_dependencies()
     echo "Installing python dependencies"
 
     if [ "${OS_DISTRO,,}" = "ubuntu" ] ; then
-        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET --trusted-host files.pythonhosted.org -r $DIR/requirements.txt"
+        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET -i https://mirrors.ustc.edu.cn/pypi/web/simple --trusted-host mirrors.ustc.edu.cn/pypi -r $DIR/requirements.txt"
         #NPS exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET --trusted-host files.pythonhosted.org --upgrade numpy"
         # Install packages for python 2.x, required for NCSDK python API
-        exec_and_search_errors "$PIP_PREFIX pip2 install $PIP_QUIET --trusted-host files.pythonhosted.org Enum34>=1.1.6"
-	exec_and_search_errors "$PIP_PREFIX pip2 install $PIP_QUIET --trusted-host files.pythonhosted.org numpy==1.15"
+        exec_and_search_errors "$PIP_PREFIX pip2 install $PIP_QUIET -i https://mirrors.ustc.edu.cn/pypi/web/simple --trusted-host mirrors.ustc.edu.cn/pypi Enum34>=1.1.6"
+        exec_and_search_errors "$PIP_PREFIX pip2 install $PIP_QUIET -i https://mirrors.ustc.edu.cn/pypi/web/simple --trusted-host mirrors.ustc.edu.cn/pypi --upgrade numpy==1.15"
         #NPS exec_and_search_errors "$PIP_PREFIX pip2 install $PIP_QUIET --trusted-host files.pythonhosted.org --upgrade numpy"
 
         # verify python3 import scipy._lib.decorator working, a potential problem on Ubuntu only.  First check python3 import scipy.  
@@ -409,15 +412,15 @@ function install_python_dependencies()
     elif [ "${OS_DISTRO,,}" = "raspbian" ] ; then
         # for Raspian, use apt with python3-* if available
         exec_and_search_errors "$SUDO_PREFIX apt-get $APT_QUIET install -y $(cat "$DIR/requirements_apt_raspbian.txt")"
-        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET --trusted-host files.pythonhosted.org Cython"
-        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET --trusted-host files.pythonhosted.org graphviz"
-        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET --trusted-host files.pythonhosted.org scikit-image>=0.13.0,<=0.14.0"
+        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET -i https://mirrors.ustc.edu.cn/pypi/web/simple --trusted-host mirrors.ustc.edu.cn/pypi Cython"
+        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET -i https://mirrors.ustc.edu.cn/pypi/web/simple --trusted-host mirrors.ustc.edu.cn/pypi graphviz"
+        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET -i https://mirrors.ustc.edu.cn/pypi/web/simple --trusted-host mirrors.ustc.edu.cn/pypi scikit-image>=0.13.0,<=0.14.0"
         #NPS exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET --trusted-host files.pythonhosted.org --upgrade numpy"
-        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET --trusted-host files.pythonhosted.org pygraphviz Enum34>=1.1.6 numpy==1.15 networkx>=2.1,<=2.1"
+        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET -i https://mirrors.ustc.edu.cn/pypi/web/simple --trusted-host mirrors.ustc.edu.cn/pypi pygraphviz Enum34>=1.1.6 numpy==1.15 networkx>=2.1,<=2.1"
         # Install packages for python 2.x, required for NCSDK python API
-        exec_and_search_errors "$PIP_PREFIX pip2 install $PIP_QUIET --trusted-host files.pythonhosted.org Enum34>=1.1.6"
+        exec_and_search_errors "$PIP_PREFIX pip2 install $PIP_QUIET -i https://mirrors.ustc.edu.cn/pypi/web/simple --trusted-host mirrors.ustc.edu.cn/pypi Enum34>=1.1.6"
         #NPS exec_and_search_errors "$PIP_PREFIX pip2 install $PIP_QUIET --trusted-host files.pythonhosted.org --upgrade numpy"
-	exec_and_search_errors "$PIP_PREFIX pip2 install $PIP_QUIET --trusted-host files.pythonhosted.org numpy==1.15"
+        exec_and_search_errors "$PIP_PREFIX pip2 install $PIP_QUIET -i https://mirrors.ustc.edu.cn/pypi/web/simple --trusted-host mirrors.ustc.edu.cn/pypi numpy==1.15"
     fi
 }
 
@@ -467,7 +470,7 @@ function install_tensorflow()
     fi      
     if [[ $tf -ne 0 && $tf_gpu -ne 0 ]]; then
         echo "Couldn't find a supported tensorflow version, installing tensorflow $SUPPORTED_TENSORFLOW_VERSION"
-        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET --trusted-host files.pythonhosted.org --trusted-host www.piwheels.org tensorflow==$SUPPORTED_TENSORFLOW_VERSION"
+        exec_and_search_errors "$PIP_PREFIX pip3 install $PIP_QUIET -i https://mirrors.ustc.edu.cn/pypi/web/simple --trusted-host mirrors.ustc.edu.cn/pypi tensorflow==$SUPPORTED_TENSORFLOW_VERSION"
     else
         echo "tensorflow already at latest supported version...skipping."
     fi
@@ -690,6 +693,7 @@ function install_caffe()
 function install_sdk()
 {
     # copy toolkit 
+    $SUDO_PREFIX cp -rf /opt/movidius/NCSDK/ncsdk-armv7l /opt/movidius/NCSDK/ncsdk-aarch64
     $SUDO_PREFIX cp -r $SDK_DIR/tk $SYS_INSTALL_DIR/bin/ncsdk
 
     check_and_remove_file $SYS_INSTALL_DIR/bin/mvNCCompile
@@ -859,7 +863,7 @@ function main()
     install_python_dependencies
 
     ### Install tensorflow and caffe based on settings in ncsdk.conf
-    [ "${INSTALL_TENSORFLOW}" = "yes" ] && install_tensorflow
+    # [ "${INSTALL_TENSORFLOW}" = "yes" ] && install_tensorflow
     [ "${INSTALL_CAFFE}" = "yes" ] && install_caffe
 
     # install SDK based on settings in ncsdk.conf and C/C++ and Python API
